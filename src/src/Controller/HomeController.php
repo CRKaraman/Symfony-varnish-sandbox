@@ -15,6 +15,6 @@ class HomeController extends AbstractController
      */
     public function index(): JsonResponse
     {
-        return new JsonResponse([]);
+        return new JsonResponse([microtime(true)]);
     }
 }

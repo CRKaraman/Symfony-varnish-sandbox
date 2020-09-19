@@ -1,4 +1,5 @@
 FROM nginx:alpine
 WORKDIR /var/www
+RUN apk add nano
 CMD ["nginx"]
-EXPOSE 80
+EXPOSE 8080
