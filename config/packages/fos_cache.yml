@@ -1,0 +1,12 @@
+fos_http_cache:
+  cache_manager:
+    enabled: true
+  proxy_client:
+    varnish:
+      tags_header: x-cache-tags
+      http:
+        servers:
+          - varnish
+  tags:
+    enabled: true
+    annotations: false

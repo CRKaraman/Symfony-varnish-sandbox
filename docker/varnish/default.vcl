@@ -6,6 +6,58 @@ backend default {
 
 # If you don't include below, header Age in response to client always be 0
 
+acl invalidators {
+    "localhost";
+    "php-fpm";
+    "nginx";
+}
+
+sub vcl_recv {
+    # return (pass);
+    # only cache GET requests
+    if (req.method != "GET" && req.method != "HEAD" && req.method != "PURGE" && req.method != "BAN") {
+        return (pass);
+    }
+
+    if (req.method == "PURGE") {
+        if (!client.ip ~ invalidators) {
+            return (synth(405, "Not allowed: " + client.ip));
+        }
+
+        return (purge);
+    }
+    if (req.method == "BAN") {
+        if (!client.ip ~ invalidators) {
+            return (synth(405, "Not allowed"));
+        }
+
+        ban("req.http.host ~ .*");
+        return (synth(200, "Banned all"));
+
+        if (req.http.x-cache-tags) {
+            ban("obj.http.x-host ~ " + req.http.x-host
+                + " && obj.http.x-url ~ " + req.http.x-url
+                + " && obj.http.content-type ~ " + req.http.x-content-type
+                + " && obj.http.x-cache-tags ~ " + req.http.x-cache-tags
+            );
+        } else {
+            ban("obj.http.x-host ~ " + req.http.x-host
+                + " && obj.http.x-url ~ " + req.http.x-url
+                + " && obj.http.content-type ~ " + req.http.x-content-type
+            );
+        }
+
+        return (synth(200, "Banned"));
+    }
+
+    if (req.http.X-Forwarded-Proto == "https" ) {
+        set req.http.X-Forwarded-Port = "443";
+    } else {
+        set req.http.X-Forwarded-Port = "80";
+    }
+    return (hash);
+}
+
 sub vcl_deliver {
   # Display hit/miss info
   if (obj.hits > 0) {
@@ -14,12 +66,7 @@ sub vcl_deliver {
   else {
     set resp.http.V-Cache = "MISS";
   }
-  set resp.http.Access-Control-Allow-Origin = "*";
-  set resp.http.Access-Control-Allow-Headers = "Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Mx-ReqToken,X-Requested-With";
-  set resp.http.Allow = "GET, POST";
-  set resp.http.Access-Control-Allow-Credentials = "true";
-  set resp.http.Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS, PATCH";
-  set resp.http.Access-Control-Expose-Headers = "X-Pagination-Total, X-Pagination-Page, X-Pagination-Limit";
+
 }
 sub vcl_backend_response {
   if (beresp.status == 200) {

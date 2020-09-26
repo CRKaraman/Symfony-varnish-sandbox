@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -20,14 +21,14 @@ class Category
     private string $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, unique=true)
      */
     private string $name;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Product", mappedBy="categories")
      */
-    private ArrayCollection $products;
+    private Collection $products;
 
     public function __construct()
     {
@@ -54,12 +55,12 @@ class Category
         $this->name = $name;
     }
 
-    public function getProducts(): ArrayCollection
+    public function getProducts(): Collection
     {
         return $this->products;
     }
 
-    public function setProducts(ArrayCollection $products): void
+    public function setProducts(Collection $products): void
     {
         $this->products = $products;
     }
