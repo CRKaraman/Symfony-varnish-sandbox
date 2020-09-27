@@ -16,7 +16,7 @@ class Category
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue(strategy="UUID")
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="guid")
      */
     private string $id;
 
@@ -50,9 +50,11 @@ class Category
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
     public function getProducts(): Collection
@@ -60,8 +62,10 @@ class Category
         return $this->products;
     }
 
-    public function setProducts(Collection $products): void
+    public function setProducts(Collection $products): self
     {
         $this->products = $products;
+
+        return $this;
     }
 }

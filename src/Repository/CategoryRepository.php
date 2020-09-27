@@ -5,8 +5,10 @@ namespace App\Repository;
 
 use App\Entity\Category;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 class CategoryRepository extends ServiceEntityRepository
@@ -21,6 +23,7 @@ class CategoryRepository extends ServiceEntityRepository
         try {
             $category = $this->createQueryBuilder('c')
                 ->where('c.name = :name')
+                ->leftJoin('c.products', 'p')
                 ->setParameter('name', $name)
                 ->getQuery()
                 ->getSingleResult();
@@ -30,6 +33,16 @@ class CategoryRepository extends ServiceEntityRepository
         } catch (NoResultException $e) {
             return null;
         }
+    }
+
+    public function findCategoriesByProductId(string $id): array
+    {
+        return $this->createQueryBuilder('c')
+            ->join('c.products', 'p')
+            ->where('p.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
     }
 
     public function save(Category $category): void

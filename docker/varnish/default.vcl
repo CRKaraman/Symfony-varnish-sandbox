@@ -3,8 +3,7 @@ backend default {
   .host = "nginx";
   .port = "8080";
 }
-
-# If you don't include below, header Age in response to client always be 0
+import std;
 
 acl invalidators {
     "localhost";
@@ -31,21 +30,14 @@ sub vcl_recv {
             return (synth(405, "Not allowed"));
         }
 
-        ban("req.http.host ~ .*");
-        return (synth(200, "Banned all"));
-
-        if (req.http.x-cache-tags) {
-            ban("obj.http.x-host ~ " + req.http.x-host
-                + " && obj.http.x-url ~ " + req.http.x-url
-                + " && obj.http.content-type ~ " + req.http.x-content-type
-                + " && obj.http.x-cache-tags ~ " + req.http.x-cache-tags
-            );
-        } else {
-            ban("obj.http.x-host ~ " + req.http.x-host
-                + " && obj.http.x-url ~ " + req.http.x-url
-                + " && obj.http.content-type ~ " + req.http.x-content-type
-            );
+        if (req.http.X-cache-tags) {
+            ban("obj.http.X-Cache-Tags ~ " + req.http.X-Cache-Tags);
+            return (synth(200, "Banned tags"));
         }
+        ban("obj.http.x-host ~ " + req.http.x-host
+            + " && obj.http.x-url ~ " + req.http.x-url
+            + " && obj.http.content-type ~ " + req.http.x-content-type
+        );
 
         return (synth(200, "Banned"));
     }
@@ -69,12 +61,15 @@ sub vcl_deliver {
 
 }
 sub vcl_backend_response {
-  if (beresp.status == 200) {
-    unset beresp.http.Cache-Control;
-    set beresp.http.Cache-Control = "public; max-age=200";
-    set beresp.ttl = 200s;
-  }
-  set beresp.http.Served-By = beresp.backend.name;
-  set beresp.http.V-Cache-TTL = beresp.ttl;
-  set beresp.http.V-Cache-Grace = beresp.grace;
+    # Set ban-lurker friendly custom headers.
+    set beresp.http.X-Url = bereq.url;
+    set beresp.http.X-Host = bereq.http.host;
+    if (beresp.status == 200) {
+        unset beresp.http.Cache-Control;
+        set beresp.http.Cache-Control = "public; max-age=3600";
+        set beresp.ttl = 3600s;
+    }
+    set beresp.http.Served-By = beresp.backend.name;
+    set beresp.http.V-Cache-TTL = beresp.ttl;
+    set beresp.http.V-Cache-Grace = beresp.grace;
 }

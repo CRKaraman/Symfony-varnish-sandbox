@@ -3,25 +3,25 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Builder\CategoryResponseBuilder;
 use App\Entity\Category;
 use App\Repository\CategoryRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\RouterInterface;
 
 class CategoryController extends AbstractController
 {
     private CategoryRepository $categoryRepository;
-    private RouterInterface $router;
+    private CategoryResponseBuilder $responseBuilder;
 
     public function __construct(
         CategoryRepository $categoryRepository,
-        RouterInterface $router
+        CategoryResponseBuilder $responseBuilder
     ) {
         $this->categoryRepository = $categoryRepository;
-        $this->router = $router;
+        $this->responseBuilder = $responseBuilder;
     }
 
     /**
@@ -31,18 +31,11 @@ class CategoryController extends AbstractController
     {
         $categories = $this->categoryRepository->findAll();
 
-        return new JsonResponse(array_map(fn(Category $category) => [
-            'name' => $category->getName(),
-            'path' => $this->router->generate(
-                'display_category',
-                ['name' => $category->getName()],
-                RouterInterface::ABSOLUTE_URL
-            )
-        ], $categories));
+        return $this->responseBuilder->buildForList($categories);
     }
 
     /**
-     * @Route("/{name}", name="display_category", methods={"GET"}, requirements={"name" = "\w+"})
+     * @Route("/{name}", name="display_category", methods={"GET"})
      */
     public function displayCategory(string $name): JsonResponse
     {
@@ -51,10 +44,6 @@ class CategoryController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        return new JsonResponse([
-            'id' => $category->getId(),
-            'name' => $category->getName(),
-            'products' => []
-        ]);
+        return $this->responseBuilder->buildForCategory($category);
     }
 }

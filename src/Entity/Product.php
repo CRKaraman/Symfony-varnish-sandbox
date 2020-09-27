@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -15,7 +16,7 @@ class Product
     /**
      * @ORM\Id()
      * @ORM\GeneratedValue(strategy="UUID")
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="guid")
      */
     private string $id;
 
@@ -25,10 +26,10 @@ class Product
     private string $name;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Category", inversedBy="products")
+     * @ORM\ManyToMany(targetEntity="App\Entity\Category", inversedBy="products", cascade={"persist"})
      * @ORM\JoinTable(name="product_category")
      */
-    private ArrayCollection $categories;
+    private Collection $categories;
 
     public function __construct()
     {
@@ -50,18 +51,22 @@ class Product
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
-    public function getCategories(): ArrayCollection
+    public function getCategories(): Collection
     {
         return $this->categories;
     }
 
-    public function setCategories(ArrayCollection $categories): void
+    public function setCategories(Collection $categories): self
     {
         $this->categories = $categories;
+
+        return $this;
     }
 }
